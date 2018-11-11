@@ -21,7 +21,9 @@ import threading
 import time
 from contextlib import suppress
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
+from sqlite3 import connect, OperationalError
 from typing import Tuple
 
 import delegator
@@ -38,33 +40,87 @@ class Application(QApplication):
     def __init__(self, folder: Path):
         QApplication.__init__(self, [])
 
+        # sqlite3.connect() does not allow WindowsPath, but Path is OK ...
+        self.db = str(folder / "statistics.db")
+
         self.tray_icon = SystemTrayIcon(self)
         self.tray_icon.show()
         self.cls = (TraficNonWindows, TraficWindows)[sys.platform.startswith("win")]()
         self.thr = threading.Thread(target=self.run, args=(self,))
         self.thr.start()
 
+    def get_last_values(self) -> Tuple[float, float]:
+        """Get last saved values from the database."""
+        today = date.today()
+        defaults = 0, 0
+
+        with suppress(OperationalError), connect(self.db) as conn:
+            cur = conn.cursor()
+            return (
+                cur.execute(
+                    "SELECT received, sent FROM Statistics WHERE day = ?", (today,)
+                ).fetchone()
+                or defaults
+            )
+        return defaults
+
+    def update_stats(self, received: int, sent: int) -> None:
+        """Save statistics in the database."""
+        today = date.today()
+
+        with connect(self.db) as conn:
+            cur = conn.cursor()
+
+            # Create the schema the first time
+            cur.execute(
+                "CREATE TABLE IF NOT EXISTS Statistics ("
+                "    day      DATETIME NOT NULL,"
+                "    received BIGINT DEFAULT 0,"
+                "    sent     BIGINT DEFAULT 0,"
+                "    PRIMARY KEY (day)"
+                ")"
+            )
+
+            # Insert or update values
+            cur.execute(
+                "INSERT OR IGNORE INTO Statistics(day, received, sent)"
+                "               VALUES (?, ?, ?)",
+                (today, received, sent),
+            )
+            cur.execute(
+                "UPDATE Statistics SET received = ?, sent = ? WHERE day = ?",
+                (received, sent, today),
+            )
+            conn.commit()
+
     def run(self, app: "Application") -> None:
         """The endless loop that will do the work."""
-        last_received, last_sent = 0, 0
+        last_received, last_sent = app.get_last_values()
         cumul_rec, cumul_sen = 0, 0
         cls = app.cls
+
+        if last_received or last_sent:
+            cls.total_received = last_received
+            cls.total_sent = last_sent
+
+        app.tray_icon.setToolTip(cls.tooltip)
 
         while app.need_to_run:
             with suppress(Exception):
                 rec, sen = cls.get_stats()
-                if last_received < rec:
+                if last_received < rec or last_sent < sen:
                     cls.total_received = rec + cumul_rec
                     cls.total_sent = sen + cumul_sen
+                    app.update_stats(cls.total_received, cls.total_sent)
+                    app.tray_icon.setToolTip(cls.tooltip)
                 else:
+                    # On Windows, when the network adaptater is re-enabled,
+                    # on session reload or on a computer crash, adaptater
+                    # statistics are resetted.
                     cumul_rec += last_received
                     cumul_sen += last_sent
 
                 last_received, last_sent = rec, sen
-                app.tray_icon.setToolTip(
-                    f"↓↓ {cls.bytes_to_mb(cls.total_received)} Mo -"
-                    f" ↑ {cls.bytes_to_mb(cls.total_sent)} Mo"
-                )
 
             time.sleep(60)  # 1 minute
 
@@ -116,6 +172,14 @@ class Trafic:
 
         return received, sent
 
+    @property
+    def tooltip(self) -> str:
+        """Return a pretty text line of counter values."""
+        return (
+            f"↓↓ {self.bytes_to_mb(self.total_received)} Mo -"
+            f" ↑ {self.bytes_to_mb(self.total_sent)} Mo"
+        )
+
 
 @dataclass
 class TraficNonWindows(Trafic):
@@ -154,12 +218,7 @@ def main() -> int:
 
     # C'est parti mon kiki !
     app = Application(folder)
-    try:
-        return app.exec_()
-    except KeyboardInterrupt:
-        app.need_to_run = False
-        app.thr.join()
-        return app.exec_()
+    return app.exec_()
 
 
 if __name__ == "__main__":
