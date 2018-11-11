@@ -2,7 +2,7 @@
 """
 Retrieve data metrics from all network adaptator.
 
-The script will log received and sent bytes.
+The script will save received and sent bytes in a SQLite3 database.
 There is also a little systray icon with a counter.
 
 Mickaël 'Tiger-222' Schoentgen
@@ -40,7 +40,7 @@ class Application(QApplication):
     def __init__(self, folder: Path):
         QApplication.__init__(self, [])
 
-        # sqlite3.connect() does not allow WindowsPath, but Path is OK ...
+        # sqlite3.connect() does not allow WindowsPath, but PosixPath is OK ...
         self.db = str(folder / "statistics.db")
 
         self.tray_icon = SystemTrayIcon(self)
@@ -49,8 +49,8 @@ class Application(QApplication):
         self.thr = threading.Thread(target=self.run, args=(self,))
         self.thr.start()
 
-    def get_last_values(self) -> Tuple[float, float]:
-        """Get last saved values from the database."""
+    def get_today_stats(self) -> Tuple[int, int]:
+        """Get current day statistics from the database."""
         today = date.today()
         defaults = 0, 0
 
@@ -75,8 +75,8 @@ class Application(QApplication):
             cur.execute(
                 "CREATE TABLE IF NOT EXISTS Statistics ("
                 "    day      DATETIME NOT NULL,"
-                "    received BIGINT DEFAULT 0,"
-                "    sent     BIGINT DEFAULT 0,"
+                "    received INTEGER DEFAULT 0,"
+                "    sent     INTEGER DEFAULT 0,"
                 "    PRIMARY KEY (day)"
                 ")"
             )
@@ -95,7 +95,7 @@ class Application(QApplication):
 
     def run(self, app: "Application") -> None:
         """The endless loop that will do the work."""
-        last_received, last_sent = app.get_last_values()
+        last_received, last_sent = app.get_today_stats()
         cumul_rec, cumul_sen = 0, 0
         cls = app.cls
 
@@ -126,26 +126,36 @@ class Application(QApplication):
 
 
 class SystemTrayIcon(QSystemTrayIcon):
-    def __init__(self, app, parent=None):
-        QSystemTrayIcon.__init__(self, parent=parent)
+    def __init__(self, app: Application) -> None:
+        QSystemTrayIcon.__init__(self)
 
         self.app = app
 
         icon = Path(getattr(sys, "_MEIPASS", ".")) / "trafic.svg"
-        self.setIcon(QIcon(str(icon)))
+        self.icon = QIcon(str(icon))
+        self.setIcon(self.icon)
 
+        self.create_menu()
+
+    def create_menu(self) -> None:
+        """Create the context menu."""
+        menu = QMenu()
         style = QApplication.style()
-        menu = QMenu(parent)
-        action = menu.addAction(
-            style.standardIcon(QStyle.SP_DialogCloseButton), "Quitter"
-        )
-        action.triggered.connect(self.exit)
+
+        for icon, label, func in (
+            # (self.icon, "Statistiques", self.msgbox),
+            (style.standardIcon(QStyle.SP_DialogCloseButton), "Quitter", self.exit),
+        ):
+            action = menu.addAction(icon, label)
+            action.triggered.connect(func)
+
         self.setContextMenu(menu)
 
     def exit(self) -> None:
+        """Quit the current application."""
         self.hide()
         self.app.need_to_run = False
-        self.app.thr.join()
+        self.app.thr.join(timeout=5)
         self.app.exit()
 
 
@@ -174,7 +184,7 @@ class Trafic:
 
     @property
     def tooltip(self) -> str:
-        """Return a pretty text line of counter values."""
+        """Return a pretty line of counter values."""
         return (
             f"↓↓ {self.bytes_to_mb(self.total_received)} Mo -"
             f" ↑ {self.bytes_to_mb(self.total_sent)} Mo"
