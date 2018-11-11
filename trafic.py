@@ -15,14 +15,12 @@ Icon:
 
 __version__ = "0.1.0"
 
-import logging
 import re
 import sys
 import threading
 import time
 from contextlib import suppress
 from dataclasses import dataclass
-from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
 from typing import Tuple
 
@@ -33,9 +31,6 @@ from PyQt5.QtGui import QIcon
 # from tendo.singleton import SingleInstance, SingleInstanceException
 
 
-log = logging.getLogger(__name__)
-
-
 class Application(QApplication):
 
     need_to_run = True
@@ -43,18 +38,11 @@ class Application(QApplication):
     def __init__(self, folder: Path):
         QApplication.__init__(self, [])
 
-        self.create_timed_rotating_log(folder)
         self.tray_icon = SystemTrayIcon(self)
         self.tray_icon.show()
         self.cls = (TraficNonWindows, TraficWindows)[sys.platform.startswith("win")]()
         self.thr = threading.Thread(target=self.run, args=(self,))
         self.thr.start()
-
-    def create_timed_rotating_log(self, folder: Path) -> None:
-        """Instanciate the hourly rotated logger."""
-        handler = TimedRotatingFileHandler(folder / "statistics.log", when="midnight")
-        log.addHandler(handler)
-        log.setLevel(logging.INFO)
 
     def run(self, app: "Application") -> None:
         """The endless loop that will do the work."""
@@ -126,7 +114,6 @@ class Trafic:
             received += int(rec)
             sent += int(sen)
 
-        log.info(f"{received} {sent}")
         return received, sent
 
 
