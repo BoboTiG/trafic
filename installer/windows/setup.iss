@@ -3,7 +3,7 @@
 ; >>> http://www.jrsoftware.org/ishelp/ <<<
 
 #define MyAppName "Trafic"
-#define MyAppPublisher "Mickaël Schoentgen"
+#define MyAppPublisher "Schoentgen Inc"
 #define MyAppURL "https://github.com/BoboTiG/trafic"
 #define MyAppUpdatesURL "https://github.com/BoboTiG/trafic/releases"
 #define MyAppExeName "trafic.exe"
@@ -22,14 +22,14 @@ AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppUpdatesURL}
-AppCopyright="© {#MyAppPublisher}. All rights reserved."
+AppCopyright="© {#MyAppPublisher}"
 
 ; Outputs
-OutputDir=dist
+OutputDir=../../dist
 OutputBaseFilename=trafic-{#MyAppVersion}
 
-; Startup menu entry: "Publisher/Application Name", i.e.: "Nuxeo/Nuxeo Drive"
-;DefaultGroupName={#MyAppPublisher}
+; Startup menu entry: "Publisher/Application Name"
+DefaultGroupName={#MyAppPublisher}
 ; Startup menu entry: "Application Name" only, i.e.: "Nuxeo Drive"
 DisableProgramGroupPage=yes
 
@@ -60,7 +60,7 @@ CloseApplicationsFilter=*.*
 
 
 [Files]
-Source: "dist\trafic\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\..\dist\trafic\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 
 [UninstallDelete]
