@@ -170,10 +170,6 @@ class Trafic:
     total_received = 0
     total_sent = 0
 
-    def bytes_to_mb(self, value: int) -> float:
-        """Convert bytes to Mb."""
-        return int(value / 1024 / 1024)
-
     def get_stats(self) -> Tuple[int, int]:
         """Simple logger for bytes received and sent."""
         cmd = delegator.run(self.cmd)
@@ -190,8 +186,8 @@ class Trafic:
     def tooltip(self) -> str:
         """Return a pretty line of counter values."""
         return (
-            f"↓↓ {self.bytes_to_mb(self.total_received)} Mo -"
-            f" ↑ {self.bytes_to_mb(self.total_sent)} Mo"
+            f"↓↓ {bytes_to_mb(self.total_received)} Mo -"
+            f" ↑ {bytes_to_mb(self.total_sent)} Mo"
         )
 
 
@@ -209,6 +205,11 @@ class TraficWindows(Trafic):
 
     cmd = ["netstat", "-e"]
     pattern = re.compile(r"(?:Bytes|Octets)\s+(\d+)\s+(\d+)")
+
+
+def bytes_to_mb(value: int) -> float:
+    """Convert bytes to Mib."""
+    return int(value / 1024 / 1024)
 
 
 def main() -> int:
