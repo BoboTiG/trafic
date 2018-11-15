@@ -41,6 +41,7 @@ class Application(QApplication):
         QApplication.__init__(self, [])
 
         # sqlite3.connect() does not allow WindowsPath, but PosixPath is OK ...
+        # So using str().
         self.db = str(folder / "statistics.db")
 
         self.tray_icon = SystemTrayIcon(self)
@@ -122,7 +123,10 @@ class Application(QApplication):
 
                 last_received, last_sent = rec, sen
 
-            time.sleep(60)  # 1 minute
+            for _ in range(60 * 15):  # 15 minutes
+                if not app.need_to_run:
+                    break
+                time.sleep(1)
 
 
 class SystemTrayIcon(QSystemTrayIcon):
@@ -155,7 +159,7 @@ class SystemTrayIcon(QSystemTrayIcon):
         """Quit the current application."""
         self.hide()
         self.app.need_to_run = False
-        self.app.thr.join(timeout=5)
+        self.app.thr.join()
         self.app.exit()
 
 
