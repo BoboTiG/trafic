@@ -21,7 +21,7 @@ import threading
 import time
 from contextlib import suppress
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from sqlite3 import connect
 from typing import Tuple
@@ -66,6 +66,17 @@ class Application(QApplication):
                 ")"
             )
 
+    def get_today_metrics(self) -> Tuple[str, int, int]:
+        """Get today metrics for global statistics."""
+        today = date.today()
+        defaults = "", 0, 0
+        sql = "SELECT strftime('%Y-%m-%d', run_at) d, SUM(received), SUM(sent) FROM Statistics WHERE d == ? GROUP BY d"
+
+        with connect(self.db) as conn:
+            return conn.cursor().execute(sql, (today,)).fetchone() or defaults
+
+        return defaults
+
     def update_stats(self, received: int, sent: int) -> None:
         """Save metrics in the database."""
         run_at = datetime.now().replace(second=0, microsecond=0)
@@ -79,7 +90,8 @@ class Application(QApplication):
 
     def run(self, app: "Application") -> None:
         """The endless loop that will do the work."""
-        last_received = last_sent = cumul_rec = cumul_sen = 0
+        last_received = last_sent = 0
+        _, cumul_rec, cumul_sen = app.get_today_metrics()
         first_run = True
 
         while app.need_to_run:
@@ -90,28 +102,24 @@ class Application(QApplication):
                     # We want to record metrics only when the application is running,
                     # so the first time we skip metrics as on GNU/Linux we will have
                     # huge data and it will blow up statistics.
-                    diff_rec = diff_sen = 0
-                elif rec >= last_received and sen >= last_sent:
-                    diff_rec = rec - last_received
-                    diff_sen = sen - last_sent
-                else:
-                    # On Windows, when the network adaptater is re-enabled,
-                    # on session reload or on a computer crash, adaptater
-                    # statistics are resetted.
-                    diff_rec, diff_sen = rec, sen
-
-                cumul_rec += diff_rec
-                cumul_sen += diff_sen
-                last_received, last_sent = rec, sen
-
-                if first_run:
                     first_run = False
-                    app.tray_icon.setToolTip(
-                        f"Enregistrement en cours ({app.delay // 60} min)"
-                    )
                 else:
+                    if rec >= last_received and sen >= last_sent:
+                        # Susbstract new values to old ones to keep revelant values.
+                        diff_rec = rec - last_received
+                        diff_sen = sen - last_sent
+                    else:
+                        # On Windows, when the network adaptater is re-enabled,
+                        # on session reload or on a computer crash, adaptater
+                        # statistics are resetted.
+                        diff_rec, diff_sen = rec, sen
+
+                    cumul_rec += diff_rec
+                    cumul_sen += diff_sen
                     app.update_stats(diff_rec, diff_sen)
-                    app.tray_icon.setToolTip(app.tooltip(cumul_rec, cumul_sen))
+
+                last_received, last_sent = rec, sen
+                app.tray_icon.setToolTip(app.tooltip(cumul_rec, cumul_sen))
 
             for _ in range(app.delay):
                 if not app.need_to_run:
@@ -122,7 +130,7 @@ class Application(QApplication):
     def tooltip(received: int, sent: int) -> str:
         """Return a pretty line of counter values."""
         return (
-            f"↓↓ {sizeof_fmt(received, suffix='o')} - ↑ {sizeof_fmt(sent, suffix='o')}"
+            f"↓ {sizeof_fmt(received, suffix='o')} - ↑ {sizeof_fmt(sent, suffix='o')}"
         )
 
 
