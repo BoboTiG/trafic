@@ -121,7 +121,9 @@ class Application(QApplication):
     @staticmethod
     def tooltip(received: int, sent: int) -> str:
         """Return a pretty line of counter values."""
-        return f"↓↓ {bytes_to_mb(received)} Mo - ↑ {bytes_to_mb(sent)} Mo"
+        return (
+            f"↓↓ {sizeof_fmt(received, suffix='o')} - ↑ {sizeof_fmt(sent, suffix='o')}"
+        )
 
 
 class SystemTrayIcon(QSystemTrayIcon):
@@ -191,9 +193,29 @@ class TraficWindows(Trafic):
     pattern = re.compile(r"(?:Bytes|Octets)\s+(\d+)\s+(\d+)")
 
 
-def bytes_to_mb(value: int) -> float:
-    """Convert bytes to Mib."""
-    return int(value / 1024 / 1024)
+def sizeof_fmt(num: int, suffix: str = "B") -> str:
+    """
+    Human readable version of file size.
+    Supports:
+        - all currently known binary prefixes (https://en.wikipedia.org/wiki/Binary_prefix)
+        - negative and positive numbers
+        - numbers larger than 1,000 Yobibytes
+        - arbitrary units
+
+    Examples:
+
+        >>> sizeof_fmt(168963795964)
+        "157.4 GiB"
+        >>> sizeof_fmt(168963795964, suffix="o")
+        "157.4 Gio"
+
+    Source: https://stackoverflow.com/a/1094933/1117028
+    """
+    for unit in ("", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"):
+        if abs(num) < 1024.0:
+            return f"{num:3.1f} {unit}{suffix}"
+        num /= 1024.0
+    return f"{num:.1f} Yi{suffix}"
 
 
 def main() -> int:
