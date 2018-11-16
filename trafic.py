@@ -130,7 +130,7 @@ class Application(QApplication):
     def tooltip(received: int, sent: int) -> str:
         """Return a pretty line of counter values."""
         return (
-            f"↓ {sizeof_fmt(received, suffix='o')} - ↑ {sizeof_fmt(sent, suffix='o')}"
+            f"↓ {sizeof_fmt(received, suffix='o')} • ↑ {sizeof_fmt(sent, suffix='o')}"
         )
 
 
