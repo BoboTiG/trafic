@@ -13,7 +13,7 @@ Icon:
     https://commons.wikimedia.org/wiki/File:Transfer-down_up.svg -> trafic.svg
 """
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 import re
 import sys
