@@ -21,9 +21,9 @@ import threading
 import time
 from contextlib import suppress
 from dataclasses import dataclass
-from datetime import date
+from datetime import datetime
 from pathlib import Path
-from sqlite3 import connect, OperationalError
+from sqlite3 import connect
 from typing import Tuple
 
 import delegator
@@ -35,6 +35,7 @@ from PyQt5.QtGui import QIcon
 
 class Application(QApplication):
 
+    delay = 60 * 5  # 5 minutes
     need_to_run = True
 
     def __init__(self, folder: Path):
@@ -42,7 +43,10 @@ class Application(QApplication):
 
         # sqlite3.connect() does not allow WindowsPath, but PosixPath is OK ...
         # So using str().
-        self.db = str(folder / "statistics.db")
+        db_file = folder / "statistics.db"
+        self.db = str(db_file)
+        if not db_file.is_file():
+            self.create_db()
 
         self.tray_icon = SystemTrayIcon(self)
         self.tray_icon.show()
@@ -50,83 +54,74 @@ class Application(QApplication):
         self.thr = threading.Thread(target=self.run, args=(self,))
         self.thr.start()
 
-    def get_today_stats(self) -> Tuple[int, int]:
-        """Get current day statistics from the database."""
-        today = date.today()
-        defaults = 0, 0
-
-        with suppress(OperationalError), connect(self.db) as conn:
-            cur = conn.cursor()
-            return (
-                cur.execute(
-                    "SELECT received, sent FROM Statistics WHERE day = ?", (today,)
-                ).fetchone()
-                or defaults
-            )
-        return defaults
-
-    def update_stats(self, received: int, sent: int) -> None:
-        """Save statistics in the database."""
-        today = date.today()
-
+    def create_db(self) -> None:
+        """Create the metrics database."""
         with connect(self.db) as conn:
-            cur = conn.cursor()
-
-            # Create the schema the first time
-            cur.execute(
+            conn.cursor().execute(
                 "CREATE TABLE IF NOT EXISTS Statistics ("
-                "    day      DATETIME NOT NULL,"
-                "    received INTEGER DEFAULT 0,"
-                "    sent     INTEGER DEFAULT 0,"
-                "    PRIMARY KEY (day)"
+                "    run_at   DATETIME,"
+                "    received INTEGER,"
+                "    sent     INTEGER,"
+                "    PRIMARY KEY (run_at)"
                 ")"
             )
 
-            # Insert or update values
-            cur.execute(
-                "INSERT OR IGNORE INTO Statistics(day, received, sent)"
+    def update_stats(self, received: int, sent: int) -> None:
+        """Save metrics in the database."""
+        run_at = datetime.now().replace(second=0, microsecond=0)
+
+        with connect(self.db) as conn:
+            conn.cursor().execute(
+                "INSERT OR IGNORE INTO Statistics(run_at, received, sent)"
                 "               VALUES (?, ?, ?)",
-                (today, received, sent),
+                (run_at, received, sent),
             )
-            cur.execute(
-                "UPDATE Statistics SET received = ?, sent = ? WHERE day = ?",
-                (received, sent, today),
-            )
-            conn.commit()
 
     def run(self, app: "Application") -> None:
         """The endless loop that will do the work."""
-        last_received, last_sent = app.get_today_stats()
-        cumul_rec, cumul_sen = 0, 0
-        cls = app.cls
-
-        if last_received or last_sent:
-            cls.total_received = last_received
-            cls.total_sent = last_sent
-
-        app.tray_icon.setToolTip(cls.tooltip)
+        last_received = last_sent = cumul_rec = cumul_sen = 0
+        first_run = True
 
         while app.need_to_run:
             with suppress(Exception):
-                rec, sen = cls.get_stats()
-                if last_received < rec or last_sent < sen:
-                    cls.total_received = rec + cumul_rec
-                    cls.total_sent = sen + cumul_sen
-                    app.update_stats(cls.total_received, cls.total_sent)
-                    app.tray_icon.setToolTip(cls.tooltip)
+                rec, sen = app.cls.metrics()
+
+                if first_run:
+                    # We want to record metrics only when the application is running,
+                    # so the first time we skip metrics as on GNU/Linux we will have
+                    # huge data and it will blow up statistics.
+                    diff_rec = diff_sen = 0
+                elif rec >= last_received and sen >= last_sent:
+                    diff_rec = rec - last_received
+                    diff_sen = sen - last_sent
                 else:
                     # On Windows, when the network adaptater is re-enabled,
                     # on session reload or on a computer crash, adaptater
                     # statistics are resetted.
-                    cumul_rec += last_received
-                    cumul_sen += last_sent
+                    diff_rec, diff_sen = rec, sen
 
+                cumul_rec += diff_rec
+                cumul_sen += diff_sen
                 last_received, last_sent = rec, sen
 
-            for _ in range(60 * 15):  # 15 minutes
+                if first_run:
+                    first_run = False
+                    app.tray_icon.setToolTip(
+                        f"Enregistrement en cours ({app.delay // 60} min)"
+                    )
+                else:
+                    app.update_stats(diff_rec, diff_sen)
+                    app.tray_icon.setToolTip(app.tooltip(cumul_rec, cumul_sen))
+
+            for _ in range(app.delay):
                 if not app.need_to_run:
                     break
                 time.sleep(1)
+
+    @staticmethod
+    def tooltip(received: int, sent: int) -> str:
+        """Return a pretty line of counter values."""
+        return f"↓↓ {bytes_to_mb(received)} Mo - ↑ {bytes_to_mb(sent)} Mo"
 
 
 class SystemTrayIcon(QSystemTrayIcon):
@@ -165,15 +160,12 @@ class SystemTrayIcon(QSystemTrayIcon):
 
 @dataclass
 class Trafic:
-    """Parent class for all OSes. Default values targetting Windows."""
+    """Parent class for all OSes."""
 
-    total_received = 0
-    total_sent = 0
-
-    def get_stats(self) -> Tuple[int, int]:
-        """Simple logger for bytes received and sent."""
+    def metrics(self) -> Tuple[int, int]:
+        """Retreive bytes received and sent."""
         cmd = delegator.run(self.cmd)
-        received, sent = 0, 0
+        received = sent = 0
 
         # In case there are more than one adaptator, we accumulate metrics
         for rec, sen in re.findall(self.pattern, cmd.out):
@@ -181,14 +173,6 @@ class Trafic:
             sent += int(sen)
 
         return received, sent
-
-    @property
-    def tooltip(self) -> str:
-        """Return a pretty line of counter values."""
-        return (
-            f"↓↓ {bytes_to_mb(self.total_received)} Mo -"
-            f" ↑ {bytes_to_mb(self.total_sent)} Mo"
-        )
 
 
 @dataclass
