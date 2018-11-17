@@ -1,5 +1,6 @@
 Thumbs.db*
 .vscode
+installer/windows/properties.rc
 
 # ---> Python
 # Byte-compiled / optimized / DLL files
@@ -60,4 +61,3 @@ docs/_build/
 
 # PyBuilder
 target/
-
