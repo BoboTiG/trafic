@@ -7,7 +7,11 @@
 #define MyAppURL "https://github.com/BoboTiG/trafic"
 #define MyAppUpdatesURL "https://github.com/BoboTiG/trafic/releases"
 #define MyAppExeName "trafic.exe"
-#define MyAppVersion "0.1.0"
+
+; The version must be define via an argument on calling ISCC.exe:
+;    iscc /DMyAppVersion="4.0.1" setup.iss
+;#define MyAppVersion "4.0.1"
+
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this particular application.
