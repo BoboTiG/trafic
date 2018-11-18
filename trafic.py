@@ -21,7 +21,7 @@ import threading
 import time
 from contextlib import suppress
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import datetime
 from pathlib import Path
 from sqlite3 import connect
 from typing import Tuple
@@ -66,17 +66,6 @@ class Application(QApplication):
                 ")"
             )
 
-    def get_today_metrics(self) -> Tuple[str, int, int]:
-        """Get today metrics for global statistics."""
-        today = date.today()
-        defaults = "", 0, 0
-        sql = "SELECT strftime('%Y-%m-%d', run_at) d, SUM(received), SUM(sent) FROM Statistics WHERE d == ? GROUP BY d"
-
-        with connect(self.db) as conn:
-            return conn.cursor().execute(sql, (today,)).fetchone() or defaults
-
-        return defaults
-
     def update_stats(self, received: int, sent: int) -> None:
         """Save metrics in the database."""
         run_at = datetime.now().replace(second=0, microsecond=0)
@@ -90,10 +79,8 @@ class Application(QApplication):
 
     def run(self, app: "Application") -> None:
         """The endless loop that will do the work."""
-        last_received = last_sent = 0
-        _, cumul_rec, cumul_sen = app.get_today_metrics()
+        last_received = last_sent = cumul_rec = cumul_sen = 0
         first_run = True
-        app.tray_icon.setToolTip(f"Enregistrement en cours ... ({app.delay} min)")
 
         while app.need_to_run:
             with suppress(Exception):
@@ -104,6 +91,9 @@ class Application(QApplication):
                     # so the first time we skip metrics as on GNU/Linux we will have
                     # huge data and it will blow up statistics.
                     first_run = False
+                    app.tray_icon.setToolTip(
+                        f"Enregistrement en cours ... ({app.delay // 60} min)"
+                    )
                 else:
                     if rec >= last_received and sen >= last_sent:
                         # Susbstract new values to old ones to keep revelant values.
@@ -118,9 +108,9 @@ class Application(QApplication):
                     cumul_rec += diff_rec
                     cumul_sen += diff_sen
                     app.update_stats(diff_rec, diff_sen)
+                    app.tray_icon.setToolTip(app.tooltip(cumul_rec, cumul_sen))
 
                 last_received, last_sent = rec, sen
-                app.tray_icon.setToolTip(app.tooltip(cumul_rec, cumul_sen))
 
             for _ in range(app.delay):
                 if not app.need_to_run:
@@ -198,7 +188,7 @@ class TraficNonWindows(Trafic):
 class TraficWindows(Trafic):
     """Targetting Windows."""
 
-    cmd = ["netstat", "-e"]
+    cmd = ["netstat", "-e", "-a"]
     pattern = re.compile(br"(?:Bytes|Octets)\s+(\d+)\s+(\d+)")
 
 
