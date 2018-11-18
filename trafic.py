@@ -13,7 +13,7 @@ Icon:
     https://commons.wikimedia.org/wiki/File:Transfer-down_up.svg -> trafic.svg
 """
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 import re
 import sys
@@ -174,7 +174,7 @@ class Trafic:
 
     def metrics(self) -> Tuple[int, int]:
         """Retreive bytes received and sent."""
-        cmd = delegator.run(self.cmd)
+        cmd = delegator.run(self.cmd, binary=True)
         received = sent = 0
 
         # In case there are more than one adaptator, we accumulate metrics
@@ -190,7 +190,7 @@ class TraficNonWindows(Trafic):
     """Targetting GNU/Linux and macOS."""
 
     cmd = "netstat -s"
-    pattern = re.compile(r"\s+InOctets: (\d+)\n\s+OutOctets: (\d+)")
+    pattern = re.compile(br"\s+InOctets: (\d+)\n\s+OutOctets: (\d+)")
 
 
 @dataclass
@@ -198,7 +198,7 @@ class TraficWindows(Trafic):
     """Targetting Windows."""
 
     cmd = ["netstat", "-e"]
-    pattern = re.compile(r"(?:Bytes|Octets)\s+(\d+)\s+(\d+)")
+    pattern = re.compile(br"(?:Bytes|Octets)\s+(\d+)\s+(\d+)")
 
 
 def sizeof_fmt(num: int, suffix: str = "B") -> str:
