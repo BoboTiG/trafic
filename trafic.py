@@ -93,6 +93,7 @@ class Application(QApplication):
         last_received = last_sent = 0
         _, cumul_rec, cumul_sen = app.get_today_metrics()
         first_run = True
+        app.tray_icon.setToolTip(f"Enregistrement en cours ... ({app.delay} min)")
 
         while app.need_to_run:
             with suppress(Exception):
