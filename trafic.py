@@ -13,7 +13,7 @@ Icon:
     https://commons.wikimedia.org/wiki/File:Transfer-down_up.svg -> trafic.svg
 """
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 
 import re
 import sys
@@ -27,8 +27,9 @@ from sqlite3 import connect
 from typing import Tuple
 
 import delegator
+from PyQt5.QtCore import QUrl
 from PyQt5.QtWidgets import QApplication, QMenu, QStyle, QSystemTrayIcon
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QDesktopServices, QIcon
 
 # from tendo.singleton import SingleInstance, SingleInstanceException
 
@@ -144,6 +145,11 @@ class SystemTrayIcon(QSystemTrayIcon):
 
         for icon, label, func in (
             # (self.icon, "Statistiques", self.msgbox),
+            (
+                style.standardIcon(QStyle.SP_FileLinkIcon),
+                "Fichier de statistiques",
+                self.open_file,
+            ),
             (style.standardIcon(QStyle.SP_DialogCloseButton), "Quitter", self.exit),
         ):
             action = menu.addAction(icon, label)
@@ -157,6 +163,11 @@ class SystemTrayIcon(QSystemTrayIcon):
         self.app.need_to_run = False
         self.app.thr.join()
         self.app.exit()
+
+    def open_file(self) -> None:
+        """Open the metrics database file.  It requires a SQLite database browser."""
+        url = QUrl.fromLocalFile(self.app.db)
+        QDesktopServices.openUrl(url)
 
 
 @dataclass
