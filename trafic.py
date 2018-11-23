@@ -13,7 +13,7 @@ Icon:
     https://commons.wikimedia.org/wiki/File:Transfer-down_up.svg -> trafic.svg
 """
 
-__version__ = "0.1.3"
+__version__ = "0.2.0"
 
 import re
 import sys
@@ -24,14 +24,32 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from sqlite3 import connect
-from typing import Tuple
+from typing import Dict, List, Tuple
 
 import delegator
-from PyQt5.QtCore import QUrl
-from PyQt5.QtWidgets import QApplication, QMenu, QStyle, QSystemTrayIcon
+from PyQt5.QtCore import Qt, QUrl
+from PyQt5.QtWidgets import (
+    QApplication,
+    QDialog,
+    QDialogButtonBox,
+    QMenu,
+    QStyle,
+    QSystemTrayIcon,
+    QTextEdit,
+    QVBoxLayout,
+)
 from PyQt5.QtGui import QDesktopServices, QIcon
 
 # from tendo.singleton import SingleInstance, SingleInstanceException
+
+
+# Constants
+APP_NAME = "Trafic"
+ICON_DOWN = "↓"
+ICON_UP = "↑"
+ICON_SEP = "•"
+COLOR_DOWN = "red"
+COLOR_UP = "green"
 
 
 class Application(QApplication):
@@ -67,7 +85,21 @@ class Application(QApplication):
                 ")"
             )
 
-    def update_stats(self, received: int, sent: int) -> None:
+    def get(self, days: int = 0) -> List[Tuple[str, int, int]]:
+        """Get metrics from the database."""
+        sql = (
+            "  SELECT strftime('%Y-%m-%d', run_at) d, SUM(received), SUM(sent)"
+            "    FROM Statistics "
+            "GROUP BY d "
+            "ORDER BY d DESC"
+        )
+        if days > 0:
+            sql += f" LIMIT {days}"
+
+        with connect(self.db) as conn:
+            return conn.cursor().execute(sql).fetchall()
+
+    def update(self, received: int, sent: int) -> None:
         """Save metrics in the database."""
         run_at = datetime.now().replace(second=0, microsecond=0)
 
@@ -108,7 +140,7 @@ class Application(QApplication):
 
                     cumul_rec += diff_rec
                     cumul_sen += diff_sen
-                    app.update_stats(diff_rec, diff_sen)
+                    app.update(diff_rec, diff_sen)
                     app.tray_icon.setToolTip(app.tooltip(cumul_rec, cumul_sen))
 
                 last_received, last_sent = rec, sen
@@ -121,9 +153,7 @@ class Application(QApplication):
     @staticmethod
     def tooltip(received: int, sent: int) -> str:
         """Return a pretty line of counter values."""
-        return (
-            f"↓ {sizeof_fmt(received, suffix='o')} • ↑ {sizeof_fmt(sent, suffix='o')}"
-        )
+        return f"{ICON_DOWN} {sizeof_fmt(received)} {ICON_SEP} {ICON_UP} {sizeof_fmt(sent)}"
 
 
 class SystemTrayIcon(QSystemTrayIcon):
@@ -137,20 +167,18 @@ class SystemTrayIcon(QSystemTrayIcon):
         self.setIcon(self.icon)
 
         self.create_menu()
+        self._dialog = None
 
     def create_menu(self) -> None:
         """Create the context menu."""
         menu = QMenu()
         style = QApplication.style()
+        func = style.standardIcon
 
         for icon, label, func in (
-            # (self.icon, "Statistiques", self.msgbox),
-            (
-                style.standardIcon(QStyle.SP_FileLinkIcon),
-                "Fichier de statistiques",
-                self.open_file,
-            ),
-            (style.standardIcon(QStyle.SP_DialogCloseButton), "Quitter", self.exit),
+            (func(QStyle.SP_FileDialogContentsView), "Statistiques", self.open_stats),
+            (func(QStyle.SP_FileDialogDetailedView), "Données brutes", self.open_file),
+            (func(QStyle.SP_DialogCloseButton), "Quitter", self.exit),
         ):
             action = menu.addAction(icon, label)
             action.triggered.connect(func)
@@ -164,10 +192,105 @@ class SystemTrayIcon(QSystemTrayIcon):
         self.app.thr.join()
         self.app.exit()
 
+    def get_stats(self) -> Dict[str, Dict[str, int]]:
+        """Retreive statistics and pre-format them into a dict."""
+        filtered_metrics = {
+            "1d": {"r": 0, "s": 0},
+            "7d": {"r": 0, "s": 0},
+            "30d": {"r": 0, "s": 0},
+            "total": {"r": 0, "s": 0, "d": 0},
+        }
+        for n, (_, received, sent) in enumerate(self.app.get()):
+            if n < 1:
+                filtered_metrics["1d"]["r"] += received
+                filtered_metrics["1d"]["s"] += sent
+                filtered_metrics["7d"]["r"] += received
+                filtered_metrics["7d"]["s"] += sent
+                filtered_metrics["30d"]["r"] += received
+                filtered_metrics["30d"]["s"] += sent
+            elif n < 7:
+                filtered_metrics["7d"]["r"] += received
+                filtered_metrics["7d"]["s"] += sent
+                filtered_metrics["30d"]["r"] += received
+                filtered_metrics["30d"]["s"] += sent
+            elif n < 30:
+                filtered_metrics["30d"]["r"] += received
+                filtered_metrics["30d"]["s"] += sent
+
+            filtered_metrics["total"]["r"] += received
+            filtered_metrics["total"]["s"] += sent
+            filtered_metrics["total"]["d"] += 1
+
+        return filtered_metrics
+
     def open_file(self) -> None:
         """Open the metrics database file.  It requires a SQLite database browser."""
         url = QUrl.fromLocalFile(self.app.db)
         QDesktopServices.openUrl(url)
+
+    def open_stats(self) -> None:
+        """Open a message box with simple metrics."""
+        if self._dialog:
+            self._dialog.destroy()
+
+        metrics = self.get_stats()
+        html = f"""
+<h2 style="text-align: center">Statistiques Basiques</h2>
+<hr/>
+
+<ul style="list-style-type: none">
+    <li>Aujourd'hui :
+        <ul style="list-style-type: none">
+            <li style="color: {COLOR_DOWN}">{ICON_DOWN} {sizeof_fmt(metrics["1d"]["r"])}</li>
+            <li style="color: {COLOR_UP}">{ICON_UP} {sizeof_fmt(metrics["1d"]["s"])}</li>
+        </ul>
+    </li>
+    <li style="margin-top: 10px">Ces 7 derniers jours :
+        <ul style="list-style-type: none">
+            <li style="color: {COLOR_DOWN}">{ICON_DOWN} {sizeof_fmt(metrics["7d"]["r"])}</li>
+            <li style="color: {COLOR_UP}">{ICON_UP} {sizeof_fmt(metrics["7d"]["s"])}</li>
+        </ul>
+    </li>
+    <li style="margin-top: 10px">Ces 30 derniers jours :
+        <ul style="list-style-type: none">
+            <li style="color: {COLOR_DOWN}">{ICON_DOWN} {sizeof_fmt(metrics["30d"]["r"])}</li>
+            <li style="color: {COLOR_UP}">{ICON_UP} {sizeof_fmt(metrics["30d"]["s"])}</li>
+        </ul>
+    </li>
+    <li style="margin-top: 10px"> <b>TOTAL</b> ({metrics["total"]["d"]} jours) :
+        <ul style="list-style-type: none">
+            <li style="color: {COLOR_DOWN}">{ICON_DOWN} {sizeof_fmt(metrics["total"]["r"])}</li>
+            <li style="color: {COLOR_UP}">{ICON_UP} {sizeof_fmt(metrics["total"]["s"])}</li>
+        </ul>
+    </li>
+    <!-- Keep this li to fix a bad display in the previous li -->
+    <li></li>
+</ul>
+"""
+
+        dialog = QDialog()
+        dialog.setWindowTitle(f"Statistiques - {APP_NAME} v{__version__}")
+        dialog.setWindowIcon(self.icon)
+        dialog.setAttribute(Qt.WA_DeleteOnClose)
+        dialog.resize(300, 460)
+
+        content = QTextEdit()
+        content.setStyleSheet("background-color: #eee; border: none;")
+        content.setReadOnly(True)
+        content.setHtml(html)
+
+        buttons = QDialogButtonBox()
+        buttons.setStandardButtons(QDialogButtonBox.Ok)
+        buttons.clicked.connect(dialog.destroy)
+
+        layout = QVBoxLayout()
+        layout.addWidget(content)
+        layout.addWidget(buttons)
+        dialog.setLayout(layout)
+
+        self._dialog = dialog
+        self._dialog.show()
+        self._dialog.raise_()
 
 
 @dataclass
@@ -203,7 +326,7 @@ class TraficWindows(Trafic):
     pattern = re.compile(br"(?:Bytes|Octets)\s+(\d+)\s+(\d+)")
 
 
-def sizeof_fmt(num: int, suffix: str = "B") -> str:
+def sizeof_fmt(num: int, suffix: str = "o") -> str:
     """
     Human readable version of file size.
     Supports:
@@ -215,9 +338,9 @@ def sizeof_fmt(num: int, suffix: str = "B") -> str:
     Examples:
 
         >>> sizeof_fmt(168963795964)
-        "157.4 GiB"
-        >>> sizeof_fmt(168963795964, suffix="o")
         "157.4 Gio"
+        >>> sizeof_fmt(168963795964, suffix="B")
+        "157.4 GiB"
 
     Source: https://stackoverflow.com/a/1094933/1117028
     """

@@ -168,10 +168,6 @@ function install_python {
 		return
 	}
 
-	# Fix a bloody issue with our slaves ... !
-	#New-Item -Path $Env:STORAGE_DIR -Name Scripts -ItemType directory
-	#Copy-Item $Env:PYTHON_DIR\vcruntime140.dll $Env:STORAGE_DIR\Scripts
-
 	Write-Output ">>> Setting-up the Python virtual environment"
 
 	& $Env:PYTHON_DIR\python.exe -m venv --copies "$Env:STORAGE_DIR"
@@ -222,8 +218,7 @@ function sign($file) {
 
 function start_app {
 	# Start the application
-	$Env:PYTHONPATH = "$Env:WORKSPACE_SRC"
-	& $Env:STORAGE_DIR\Scripts\python.exe $Env:APP_NAME_LOWER.py
+	& $Env:STORAGE_DIR\Scripts\python.exe "$Env:APP_NAME_LOWER.py"
 }
 
 function zip_files($filename, $src) {
