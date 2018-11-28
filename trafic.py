@@ -231,7 +231,10 @@ class SystemTrayIcon(QSystemTrayIcon):
     def open_stats(self) -> None:
         """Open a message box with simple metrics."""
         if self._dialog:
-            self._dialog.destroy()
+            with suppress(RuntimeError):
+                # Skip RuntimeError: wrapped C/C++ object of type QDialog has been deleted
+                self._dialog.destroy()
+            self._dialog = None
 
         metrics = self.get_stats()
         html = f"""
