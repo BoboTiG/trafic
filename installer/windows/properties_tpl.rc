@@ -15,7 +15,7 @@ VSVersionInfo(
       StringTable(
         '040904B0',
         [StringStruct('CompanyName', 'Schoentgen Inc'),
-        StringStruct('FileDescription', 'Network adaptaters monitor.'),
+        StringStruct('FileDescription', 'Trafic'),
         StringStruct('FileVersion', '{version}'),
         StringStruct('InternalName', 'trafic'),
         StringStruct('LegalCopyright', '\xa9 Schoentgen Inc'),

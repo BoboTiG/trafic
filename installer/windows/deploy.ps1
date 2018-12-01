@@ -44,7 +44,7 @@ function build($app_version, $script) {
 
 function build_installer {
 	# Build the installer
-	$app_version = (Get-Content "$Env:APP_NAME_LOWER.py") -match "^__version__" -replace '"', "" -replace "__version__ = ", ""
+	$app_version = (Get-Content "$Env:APP_NAME_LOWER\__init__.py") -match "^__version__" -replace '"', "" -replace "__version__ = ", ""
 
 	Write-Output ">>> [$app_version] Freezing the application"
 	& $Env:STORAGE_DIR\Scripts\pyinstaller "$Env:APP_NAME_LOWER.spec" --noconfirm
@@ -218,7 +218,7 @@ function sign($file) {
 
 function start_app {
 	# Start the application
-	& $Env:STORAGE_DIR\Scripts\python.exe "$Env:APP_NAME_LOWER.py"
+	& $Env:STORAGE_DIR\Scripts\python.exe -m "$Env:APP_NAME_LOWER"
 }
 
 function zip_files($filename, $src) {

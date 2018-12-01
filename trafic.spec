@@ -42,7 +42,7 @@ excludes = [
 ]
 
 data = [("trafic.svg", ".")]
-version = get_version("trafic.py")
+version = get_version("trafic/__init__.py")
 properties_rc = None
 
 if sys.platform == "win32":
@@ -60,7 +60,7 @@ if sys.platform == "win32":
         out.write(content)
 
 a = Analysis(
-    ["trafic.py"],
+    ["trafic/__main__.py"],
     datas=data,
     excludes=excludes,
 )
