@@ -107,3 +107,30 @@ def sizeof_fmt(num: int, suffix: str = "o") -> str:
             return f"{val:3.1f} {unit}{suffix}"
         val /= 1024.0
     return f"{val:.1f} Yi{suffix}"
+
+
+def display_stats(db: str):
+    """Print statistics in the terminal."""
+
+    metrics = get_stats(db)
+    text = f"""
+Statistiques Basiques
+---------------------
+
+Aujourd'hui :
+    {ICON_DOWN} {sizeof_fmt(metrics["1d"]["r"])}
+    {ICON_UP} {sizeof_fmt(metrics["1d"]["s"])}
+
+Ces 7 derniers jours :
+    {ICON_DOWN} {sizeof_fmt(metrics["7d"]["r"])}
+    {ICON_UP} {sizeof_fmt(metrics["7d"]["s"])}
+
+Ces 30 derniers jours :
+    {ICON_DOWN} {sizeof_fmt(metrics["30d"]["r"])}
+    {ICON_UP} {sizeof_fmt(metrics["30d"]["s"])}
+
+TOTAL ({metrics["total"]["d"]} jours) :
+    {ICON_DOWN} {sizeof_fmt(metrics["total"]["r"])}
+    {ICON_UP} {sizeof_fmt(metrics["total"]["s"])}
+"""
+    print(text.lstrip())

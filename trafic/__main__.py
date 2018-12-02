@@ -35,7 +35,11 @@ def main() -> int:
     """
 
     # C'est parti mon kiki !
-    if "--console" in sys.argv:
+    if "--statistics" in sys.argv:
+        from trafic.utils import display_stats
+
+        return display_stats(str(db_file))
+    elif "--console" in sys.argv:
         from trafic.console import Application
     else:
         from trafic.gui import Application  # type: ignore
