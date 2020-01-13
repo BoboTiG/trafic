@@ -2,4 +2,4 @@ dataclasses==0.6.0 ; python_version < "3.7"
 delegator.py==0.1.1
 pyinstaller==3.6
 pyqt5==5.11.2
-tendo==0.2.12
+tendo==0.2.15
