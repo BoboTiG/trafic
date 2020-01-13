@@ -18,7 +18,7 @@ VSVersionInfo(
         StringStruct('FileDescription', 'Trafic'),
         StringStruct('FileVersion', '{version}'),
         StringStruct('InternalName', 'trafic'),
-        StringStruct('LegalCopyright', '\xa9 Schoentgen Inc'),
+        StringStruct('LegalCopyright', '\xa9 2018-2020 Schoentgen Inc'),
         StringStruct('OriginalFilename', 'trafic.exe'),
         StringStruct('ProductName', 'Trafic'),
         StringStruct('ProductVersion', '{version}')])
