@@ -1,6 +1,6 @@
 # Trafic
 
-A Python desktop application that displays a systray icon with a counter about data metrics from all network adaptators.
+A Python desktop application that displays a systray icon with a counter about data metrics from all network adaptators. Codename: Mayonnaise.
 
 Tested OK on:
 - Debian GNU/Linux 10 (buster)
