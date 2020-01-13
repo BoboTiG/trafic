@@ -3,7 +3,7 @@
 ; >>> http://www.jrsoftware.org/ishelp/ <<<
 
 #define MyAppName "Trafic"
-#define MyAppPublisher "2018-2020 Schoentgen Inc"
+#define MyAppPublisher "Schoentgen Inc"
 #define MyAppURL "https://github.com/BoboTiG/trafic"
 #define MyAppUpdatesURL "https://github.com/BoboTiG/trafic/releases"
 #define MyAppExeName "trafic.exe"
@@ -26,7 +26,7 @@ AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppUpdatesURL}
-AppCopyright="© {#MyAppPublisher}"
+AppCopyright="© 2018-2020 {#MyAppPublisher}"
 
 ; Outputs
 OutputDir=../../dist
