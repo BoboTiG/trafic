@@ -53,6 +53,9 @@ SetupIconFile=app_icon.ico
 ; 55x58px
 WizardSmallImageFile=wizard-small.bmp
 
+; Use a modern look
+WizardStyle=modern
+
 ; Other
 Compression=lzma
 SolidCompression=yes
