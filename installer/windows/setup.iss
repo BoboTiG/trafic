@@ -34,8 +34,6 @@ OutputBaseFilename=trafic-{#MyAppVersion}
 
 ; Startup menu entry: "Publisher/Application Name"
 DefaultGroupName={#MyAppPublisher}
-; Startup menu entry: "Application Name" only, i.e.: "Nuxeo Drive"
-DisableProgramGroupPage=yes
 
 ; Do not require admin rights, no UAC
 PrivilegesRequired=lowest
