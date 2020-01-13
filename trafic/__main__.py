@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 
-# from tendo.singleton import SingleInstance, SingleInstanceException
+from tendo.singleton import SingleInstance, SingleInstanceException
 
 from trafic.utils import create_db
 
@@ -24,15 +24,11 @@ def main() -> int:
         create_db(str(db_file))
 
     # Allow only one instance
-    """
-    TODO: https://github.com/pycontribs/tendo/issues/32
     lockfile = folder / "trafic.lock"
     try:
-        me = SingleInstance(lockfile=lockfile)
-        print(me)
+        me = SingleInstance(lockfile=str(lockfile))
     except SingleInstanceException:
         return 1
-    """
 
     # C'est parti mon kiki !
     if "--statistics" in sys.argv:
