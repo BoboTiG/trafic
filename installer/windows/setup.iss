@@ -34,6 +34,7 @@ OutputBaseFilename=trafic-{#MyAppVersion}
 
 ; Startup menu entry: "Publisher/Application Name"
 DefaultGroupName={#MyAppPublisher}
+DisableProgramGroupPage=yes
 
 ; Do not require admin rights, no UAC
 PrivilegesRequired=lowest
