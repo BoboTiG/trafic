@@ -16,3 +16,7 @@ set WORKSPACE=%USERPROFILE%\Desktop
 powershell -ExecutionPolicy Bypass .\installer\windows\deploy.ps1 -install
 powershell -ExecutionPolicy Bypass .\installer\windows\deploy.ps1 -build
 ```
+
+## Credits
+
+Windows installer final wizard picture taken from https://www.reddit.com/r/wallpapers/comments/cpkvnl/retro_style_wallpaper_2560x1440/.

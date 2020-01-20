@@ -49,8 +49,8 @@ UninstallDisplayIcon={app}\{#MyAppExeName}
 SetupIconFile=app_icon.ico
 
 ; Pictures
-; 164x314px
-;WizardImageFile=wizard.bmp
+; https://www.jrsoftware.org/ishelp/topic_setup_wizardimagefile.htm
+WizardImageFile=wizard.bmp
 ; 55x58px
 WizardSmallImageFile=wizard-small.bmp
 
