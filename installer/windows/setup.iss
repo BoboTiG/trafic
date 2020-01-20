@@ -41,7 +41,7 @@ PrivilegesRequired=lowest
 
 ; Set the output directory to user's AppData\Local by default.
 DisableDirPage=yes
-DefaultDirName={param:targetdir|{localappdata}\{#MyAppName}}
+DefaultDirName={localappdata}\{#MyAppName}
 
 ; Icons
 UninstallDisplayIcon={app}\{#MyAppExeName}
