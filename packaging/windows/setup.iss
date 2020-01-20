@@ -9,8 +9,11 @@
 #define MyAppExeName "trafic.exe"
 
 ; The version must be define via an argument on calling ISCC.exe:
-;    iscc /DMyAppVersion="4.0.1" setup.iss
-;#define MyAppVersion "4.0.1"
+;    iscc /DMyAppVersion="0.1.0" setup.iss
+; Same for the real product version, used for the output file:
+;    iscc /DMyAppVersion="0.1.0" /DMyAppRealVersion="0.1b1" setup.iss
+;#define MyAppVersion "0.1.0"
+;#define MyAppRealVersion "0.1b1"
 
 
 [Setup]
@@ -19,9 +22,9 @@
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 AppId={{7AE3DF21-E5B9-4438-84B6-DA8C3899FD14}
 AppName={#MyAppName}
-AppVersion={#MyAppVersion}
+AppVersion={##MyAppRealVersion}
 VersionInfoVersion={#MyAppVersion}
-AppVerName={#MyAppName} {#MyAppVersion}
+AppVerName={#MyAppName}
 AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
@@ -30,7 +33,7 @@ AppCopyright="© 2018-2020 {#MyAppPublisher}"
 
 ; Outputs
 OutputDir=../../dist
-OutputBaseFilename=trafic-{#MyAppVersion}
+OutputBaseFilename=trafic-{#MyAppRealVersion}
 
 ; Startup menu entry: "Publisher/Application Name"
 DefaultGroupName={#MyAppPublisher}
@@ -50,9 +53,9 @@ SetupIconFile=app_icon.ico
 
 ; Pictures
 ; https://www.jrsoftware.org/ishelp/topic_setup_wizardimagefile.htm
-WizardImageFile=wizard.bmp
+WizardImageFile=pictures\wizard.bmp
 ; 55x58px
-WizardSmallImageFile=wizard-small.bmp
+WizardSmallImageFile=pictures\wizard-small.bmp
 
 ; Use a modern look
 WizardStyle=modern

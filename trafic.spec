@@ -20,7 +20,7 @@ def get_version(init_file):
 icon = {
     "darwin": "app_icon.icns",
     "linux": "app_icon.png",
-    "win32": "installer\\windows\\app_icon.ico",
+    "win32": "installer\\windows\\pictures\\app_icon.ico",
 }[sys.platform]
 
 excludes = [

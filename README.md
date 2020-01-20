@@ -11,11 +11,7 @@ Tested OK on:
 
 ### Windows
 
-```batch
-set WORKSPACE=%USERPROFILE%\Desktop
-powershell -ExecutionPolicy Bypass .\installer\windows\deploy.ps1 -install
-powershell -ExecutionPolicy Bypass .\installer\windows\deploy.ps1 -build
-```
+Double-click on `build-win.bat` (think to update environment variables first).
 
 ## Credits
 
