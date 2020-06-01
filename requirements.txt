@@ -1,4 +1,4 @@
 dataclasses==0.6.0 ; python_version < "3.7"
 delegator.py==0.1.1
-pyqt5==5.13.2
+pyqt5==5.15.0
 tendo==0.2.15
