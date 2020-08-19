@@ -1,6 +1,6 @@
 Thumbs.db*
 .vscode
-installer/windows/properties.rc
+packaging/windows/properties.rc
 
 # ---> Python
 # Byte-compiled / optimized / DLL files
