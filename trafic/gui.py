@@ -22,6 +22,10 @@ from .utils import get_stats, sizeof_fmt
 from .worker import Worker
 
 
+# Enable High-DPI
+QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+
+
 class Application(QApplication):
     def __init__(self, db_file: str):
         QApplication.__init__(self, [])
