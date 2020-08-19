@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import (
     QDialog,
     QDialogButtonBox,
     QMenu,
+    QMessageBox,
     QStyle,
     QSystemTrayIcon,
     QTextEdit,
@@ -71,6 +72,24 @@ class SystemTrayIcon(QSystemTrayIcon):
 
         self.setContextMenu(menu)
 
+    def _display_message(self, icon: QIcon, title: str, message: str) -> None:
+        """Display a generic message box warning."""
+        msg = QMessageBox()
+        msg.setWindowTitle(title)
+        msg.setWindowIcon(self.icon)
+        msg.setIcon(icon)
+        msg.setTextFormat(Qt.RichText)
+        msg.setText(message)
+        msg.exec_()
+
+    def display_info(self, title: str, message: str) -> None:
+        """Display a generic message box information."""
+        self._display_message(QMessageBox.Information, title, message)
+
+    def display_warning(self, title: str, message: str) -> None:
+        """Display a generic message box warning."""
+        self._display_message(QMessageBox.Warning, title, message)
+
     def exit(self) -> None:
         """Quit the current application."""
         self.hide()
@@ -81,7 +100,9 @@ class SystemTrayIcon(QSystemTrayIcon):
     def open_file(self) -> None:
         """Open the metrics database file.  It requires a SQLite database browser."""
         url = QUrl.fromLocalFile(self.app.db)
-        QDesktopServices.openUrl(url)
+        if not QDesktopServices.openUrl(url):
+            msg = f"Veuillez installer <a href='https://sqlitebrowser.org/dl/'>DB Browser for SQLite</a>."
+            self.display_warning(APP_NAME, msg)
 
     def open_stats(self) -> None:
         """Open a message box with simple metrics."""
