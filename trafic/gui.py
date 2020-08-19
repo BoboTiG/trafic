@@ -70,7 +70,7 @@ class Application(QApplication):
         self.tray_icon = SystemTrayIcon(self)
         self.tray_icon.show()
 
-        if hasattr(sys, "frozen"):
+        if hasattr(sys, "frozen") and sys.platform.startswith("win"):
             self._check_for_update()
 
         self.worker = Worker(self, self.db)
