@@ -1,16 +1,15 @@
 # coding: utf-8
 """
 Remove files from the package that are not needed and too big.
-This script can be launched after PyInstaller and before the DMG or EXE creation.
+This script can be launched after PyInstaller and before installers creation.
 """
 import os
 import shutil
 import sys
 from pathlib import Path
-from typing import Generator, List, Set
+from typing import Generator, List, Tuple
 
-
-FILES: Set[str] = {
+FILES: Tuple[str] = (
     "PyQt*/Qt/lib",  # Contains only WebEngineCore.framework on macOS
     "PyQt*/Qt/plugins/mediaservice",
     "PyQt*/Qt/plugins/position",
@@ -92,23 +91,22 @@ FILES: Set[str] = {
     "*Qt*WinExtras*",
     "*Qt*Xml*",
     "*Qt*XmlPatterns*",
-}
+)
 
 
 def find_useless_files(folder: Path) -> Generator[Path, None, None]:
     """Recursively yields files we want to remove."""
     for pattern in FILES:
-        for path in folder.glob(pattern):
-            yield path
+        yield from folder.glob(pattern)
 
 
 def main(args: List[str]) -> int:
     """
-    Purge uneeded files from the packaged application.
+    Purge unneeded files from the packaged application.
     Take one or more folder arguments: "ndrive", "Nuxeo Drive.app".
     """
     for folder in args:
-        print(f">>> [{folder}] Purging uneeded files")
+        print(f">>> [{folder}] Purging unneeded files")
         for file in find_useless_files(Path(folder)):
             if file.is_dir():
                 shutil.rmtree(file)
