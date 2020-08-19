@@ -7,6 +7,8 @@ import os.path
 import re
 import sys
 
+from PyInstaller.utils.hooks import copy_metadata
+
 
 def get_version(init_file):
     """ Find the current version. """
@@ -42,6 +44,7 @@ excludes = [
 ]
 
 data = [("trafic.svg", ".")]
+data.extend(copy_metadata("tendo"))  # See issue BoboTiG/watermark-me#75
 version = get_version("trafic/__init__.py")
 properties_rc = None
 
