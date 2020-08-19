@@ -3,7 +3,7 @@ import sys
 from contextlib import suppress
 from pathlib import Path
 
-from PyQt5.QtCore import QUrl, Qt
+from PyQt5.QtCore import QUrl, Qt, QTimer
 from PyQt5.QtGui import QDesktopServices, QIcon
 from PyQt5.QtWidgets import (
     QApplication,
@@ -30,6 +30,32 @@ QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 class Application(QApplication):
     def __init__(self, db_file: str):
         QApplication.__init__(self, [])
+
+        # Little trick here!
+        #
+        # Qt strongly builds on a concept called event loop.
+        # Such an event loop enables you to write parallel applications without multithreading.
+        # The concept of event loops is especially useful for applications where
+        # a long living process needs to handle interactions from a user or client.
+        # Therefore, you often will find event loops being used in GUI or web frameworks.
+        #
+        # However, the pitfall here is that Qt is implemented in C++ and not in Python.
+        # When we execute app.exec_() we start the Qt/C++ event loop, which loops
+        # forever until it is stopped.
+        #
+        # The problem here is that we don't have any Python events set up yet.
+        # So our event loop never churns the Python interpreter and so our signal
+        # delivered to the Python process is never processed. Therefore, our
+        # Python process never sees the signal until we hit some button of
+        # our Qt application window.
+        #
+        # To circumvent this problem is very easy. We just need to set up a timer
+        # kicking off our event loop every few milliseconds.
+        #
+        # https://machinekoder.com/how-to-not-shoot-yourself-in-the-foot-using-python-qt/
+        self.timer = QTimer()
+        self.timer.timeout.connect(lambda: None)
+        self.timer.start(100)
 
         self.db = db_file
 
