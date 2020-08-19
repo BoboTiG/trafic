@@ -10,6 +10,9 @@ If that URL should fail, try contacting the author.
 # Application name
 APP_NAME = "Trafic"
 
+# Auto-update URL
+UPDATE_URL = "https://api.github.com/repos/BoboTiG/trafic/releases"
+
 # Metrics retrieval interval
 DELAY = 60 * 5  # 5 minutes
 

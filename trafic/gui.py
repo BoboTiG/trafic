@@ -70,11 +70,25 @@ class Application(QApplication):
         self.tray_icon = SystemTrayIcon(self)
         self.tray_icon.show()
 
+        if hasattr(sys, "frozen"):
+            self._check_for_update()
+
         self.worker = Worker(self, self.db)
 
     def output(self, msg: str) -> None:
         """Change the system tray tooltip."""
         self.tray_icon.setToolTip(msg)
+
+    def _check_for_update(self) -> None:
+        """Check for a new update."""
+        try:
+            from . import __version__
+            from .updater.windows import Updater
+
+            updater = Updater(self.tray_icon.setToolTip)
+            updater.check(__version__)
+        except Exception as exc:
+            print(f"Erreur de MàJ automatique ({exc})", flush=True)
 
 
 class SystemTrayIcon(QSystemTrayIcon):
@@ -127,8 +141,9 @@ class SystemTrayIcon(QSystemTrayIcon):
     def exit(self) -> None:
         """Quit the current application."""
         self.hide()
-        self.app.worker.need_to_run = False
-        self.app.worker.thr.join()
+        if hasattr(self.app, "worker"):
+            self.app.worker.need_to_run = False
+            self.app.worker.thr.join()
         self.app.exit()
 
     def open_file(self) -> None:
