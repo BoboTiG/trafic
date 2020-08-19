@@ -77,6 +77,7 @@ FILES: Tuple[str] = (
     "*Qt*Network*",
     "*Qt*Qml*",
     "*Qt*Quick*",
+    "*Qt*PrintSupport*",
     "*Qt*Positioning*",
     "*Qt*QuickParticles*",
     "*Qt*QuickTest*",
