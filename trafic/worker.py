@@ -1,12 +1,10 @@
 # coding: utf-8
 import threading
 import time
-from contextlib import suppress
 from typing import TYPE_CHECKING
 
 from .constants import DELAY
-from .trafic import trafic
-from .utils import tooltip, update
+from .utils import metrics, tooltip, update
 
 if TYPE_CHECKING:
     from .console import Application  # noqa
@@ -17,7 +15,6 @@ class Worker:
         self.db = db_file
         self.app = app
 
-        self.cls = trafic()
         self.need_to_run = True
 
         self.thr = threading.Thread(target=self.run)
@@ -29,8 +26,8 @@ class Worker:
         first_run = True
 
         while self.need_to_run:
-            with suppress(Exception):
-                rec, sen = self.cls.metrics()
+            try:
+                rec, sen = metrics()
 
                 if first_run:
                     # We want to record metrics only when the application is running,
@@ -55,11 +52,13 @@ class Worker:
                     self.app.output(tooltip(cumul_rec, cumul_sen))
 
                 last_received, last_sent = rec, sen
+            except Exception as exc:
+                print(exc, flush=True)
 
             self.wait()
 
     def wait(self) -> None:
-        """"""
+        """Wait *DELAY* seconds and check for app exit every second."""
         for _ in range(DELAY):
             if not self.need_to_run:
                 break

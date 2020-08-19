@@ -15,7 +15,7 @@ Icon:
     https://commons.wikimedia.org/wiki/File:Transfer-down_up.svg -> trafic.svg
 """
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 __author__ = "Mickaël 'Tiger-222' Schoentgen"
 __copyright__ = """
 Copyright (c) 2018-2020, Mickaël 'Tiger-222' Schoentgen

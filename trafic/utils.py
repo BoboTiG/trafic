@@ -3,6 +3,8 @@ from datetime import datetime
 from sqlite3 import connect
 from typing import Dict, List, Tuple
 
+from psutil import net_io_counters
+
 from .constants import ICON_DOWN, ICON_SEP, ICON_UP
 
 
@@ -49,6 +51,12 @@ def update(db: str, received: int, sent: int) -> None:
 def tooltip(received: int, sent: int) -> str:
     """Return a pretty line of counter values."""
     return f"{ICON_DOWN} {sizeof_fmt(received)} {ICON_SEP} {ICON_UP} {sizeof_fmt(sent)}"
+
+
+def metrics() -> Tuple[int, int]:
+    """Retreive bytes received and sent."""
+    stats = net_io_counters(nowrap=True)
+    return stats.bytes_recv, stats.bytes_sent
 
 
 def get_stats(db: str) -> Dict[str, Dict[str, int]]:
