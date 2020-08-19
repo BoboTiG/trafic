@@ -13,6 +13,13 @@ If that URL should fail, try contacting the author.
 
 Icon:
     https://commons.wikimedia.org/wiki/File:Transfer-down_up.svg -> trafic.svg
+
+Versionning
+-----------
+We use semantic versioning (https://semver.org) compliant with distutils
+and the PEP-440.
+To declare a beta, use this schema:
+    - X.Y.ZbN i.e. "2.4.5b1"
 """
 
 __version__ = "0.4.0"
