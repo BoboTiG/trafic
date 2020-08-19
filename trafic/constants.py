@@ -1,6 +1,3 @@
-# coding: utf-8
-from sys import platform
-
 # Application name
 APP_NAME = "Trafic"
 
@@ -15,6 +12,3 @@ ICON_UP = "↑"
 # Download and upload colors
 COLOR_DOWN = "red"
 COLOR_UP = "green"
-
-# Running on Windows?
-WINDOWS = platform.startswith("win")

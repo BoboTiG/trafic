@@ -26,7 +26,7 @@ def main() -> int:
     # Allow only one instance
     lockfile = folder / "trafic.lock"
     try:
-        me = SingleInstance(lockfile=str(lockfile))
+        me = SingleInstance(lockfile=str(lockfile))  # noqa
     except SingleInstanceException:
         return 1
 
