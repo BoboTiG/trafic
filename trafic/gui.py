@@ -127,7 +127,7 @@ class SystemTrayIcon(QSystemTrayIcon):
         """Open the metrics database file.  It requires a SQLite database browser."""
         url = QUrl.fromLocalFile(self.app.db)
         if not QDesktopServices.openUrl(url):
-            msg = f"Veuillez installer <a href='https://sqlitebrowser.org/dl/'>DB Browser for SQLite</a>."
+            msg = "Veuillez installer <a href='https://sqlitebrowser.org/dl/'>DB Browser for SQLite</a>."
             self.display_warning(APP_NAME, msg)
 
     def open_stats(self) -> None:
