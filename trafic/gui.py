@@ -148,3 +148,4 @@ class SystemTrayIcon(QSystemTrayIcon):
 
         self._dialog = dialog
         self._dialog.show()
+        self._dialog.raise_()
