@@ -20,7 +20,7 @@ def get_version(init_file):
 
 
 icon = {
-    "darwin": "app_icon.icns",
+    "darwin": "packaging/macos/app_icon.icns",
     "linux": "app_icon.png",
     "win32": "packaging\\windows\\pictures\\app_icon.ico",
 }[sys.platform]
