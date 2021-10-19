@@ -1,5 +1,5 @@
 dataclasses==0.6.0 ; python_version < "3.7"
 psutil==5.8.0
-pyqt5==5.15.4
+pyqt5==5.15.5
 requests==2.26.0
 tendo==0.2.15
